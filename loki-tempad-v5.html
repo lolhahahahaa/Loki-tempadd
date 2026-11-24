@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TVA TemPad // Sacred Timeline Monitor v5</title>
+  <style>
+    :root {
+      --bg-void: #0a0704;
+      --metal-light: #c8bca8;
+      --metal-mid: #96856c;
+      --metal-dark: #5e503c;
+      --metal-shadow: #2b2318;
+      --dial-cyan: #72c7e7;
+      --dial-cyan-glow: rgba(114, 199, 231, 0.55);
+      --screen-bg: #0c0703;
+      --grid-line: rgba(255, 136, 0, 0.13);
+      --amber-bright: #ff941a;
+      --amber-hot: #ffb84d;
+      --amber-glow: rgba(255, 148, 26, 0.45);
+      --amber-dim: #a65c0e;
+      --amber-border: #804406;
+      --alert-red: #ff3b1f;
+      --font-mono: "Courier Prime", "JetBrains Mono", "Fira Code", Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      background-image:
+        radial-gradient(circle at 50% 45%, #24170c 0%, #0d0804 65%, #050302 100%);
+      color: var(--amber-bright);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+      overflow-x: hidden;
+    }
+
+    /* =========================================================
+       TEMPAD HARDWARE CHASSIS
+       ========================================================= */
+    .tempad-device {
+      position: relative;
+      width: 100%;
+      max-width: 1080px;
+      background: linear-gradient(160deg, #b8aa94 0%, #8f7e65 38%, #6d5e49 78%, #85755d 100%);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 118px 1fr;
+      gap: 14px;
+      box-shadow:
+        0 28px 70px rgba(0, 0, 0, 0.9),
+        inset 0 2px 2px rgba(255, 250, 235, 0.55),
+        inset 0 -3px 5px rgba(28, 22, 14, 0.85),
+        0 0 0 2px #3c3224;
+    }
+
+    /* Left Rotary Dial Bay */
+    .tempad-dial-bay {
+      position: relative;
+      background: linear-gradient(180deg, #6e604b 0%, #4d4233 50%, #635541 100%);
+      border-radius: 8px;
+      border: 2px solid #382f23;
+      box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.7),
+        0 1px 0 rgba(255, 255, 255, 0.25);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      overflow: hidden;
+    }
+
+    .dial-notch {
+      width: 68%;
+      height: 16px;
+      background: linear-gradient(90deg, #4b4031, #7c6d56, #4b4031);
+      border: 1px solid #2c241a;
+      border-radius: 3px;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+    }
+
+    .dial-wheel-housing {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      margin: 10px 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+    }
+
+    .dial-arc-outer {
+      position: absolute;
+      left: -82px;
+      width: 176px;
+      height: 290px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 65% 50%, #8f7e65 0%, #5a4d3b 75%, #372e22 100%);
+      border: 3px solid #2b2319;
+      box-shadow:
+        4px 0 14px rgba(0, 0, 0, 0.65),
+        inset -3px 0 6px rgba(255, 245, 220, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dial-arc-cyan {
+      width: 144px;
+      height: 248px;
+      border-radius: 50%;
+      border: 10px solid var(--dial-cyan);
+      box-shadow:
+        0 0 14px var(--dial-cyan-glow),
+        inset 0 0 10px var(--dial-cyan-glow);
+      background: radial-gradient(circle at 60% 50%, #7f6f58, #4d4132);
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .tempad-device.busy .dial-arc-cyan {
+      animation: dialPulse 1.1s infinite alternate;
+    }
+
+    @keyframes dialPulse {
+      from {
+        border-color: #72c7e7;
+        box-shadow: 0 0 10px rgba(114, 199, 231, 0.4);
+      }
+      to {
+        border-color: #ffb84d;
+        box-shadow: 0 0 22px rgba(255, 184, 77, 0.85);
+      }
+    }
+
+    /* Right Bezel + Screen Frame */
+    .tempad-screen-bezel {
+      position: relative;
+      background: linear-gradient(145deg, #a89982, #786953);
+      border-radius: 10px;
+      padding: 14px 26px 22px 14px;
+      border: 2px solid #3f3527;
+      box-shadow:
+        inset 0 1px 2px rgba(255, 250, 235, 0.45),
+        inset 0 -2px 4px rgba(25, 20, 14, 0.75);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bezel-tva-stamp {
+      position: absolute;
+      right: 5px;
+      bottom: 10px;
+      writing-mode: vertical-rl;
+      font-weight: 900;
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      color: rgba(45, 36, 24, 0.65);
+      text-shadow: 1px 1px 0 rgba(255, 245, 225, 0.35);
+      user-select: none;
+    }
+
+    /* =========================================================
+       CRT MONITOR SCREEN WITH GRID & ANIMATED SCANLINES
+       ========================================================= */
+    .crt-screen {
+      position: relative;
+      background-color: var(--screen-bg);
+      background-image:
+        linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+      background-size: 24px 24px;
+      border: 4px solid #160e06;
+      border-radius: 8px;
+      box-shadow:
+        inset 0 0 45px rgba(0, 0, 0, 0.92),
+        inset 0 0 18px rgba(255, 148, 26, 0.18),
+        0 0 0 2px #4c3e2d;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 85vh;
+      max-height: 780px;
+      animation: crtFlicker 6s infinite;
+    }
+
+    .crt-scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.42) 3px,
+        rgba(255, 148, 26, 0.04) 4px
+      );
+      background-size: 100% 4px;
+      animation: scanlineScroll 0.45s linear infinite;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    .crt-sweep-beam {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 90px;
+      background: linear-gradient(
+        to bottom,
+        transparent 0%,
+        rgba(255, 165, 45, 0.06) 50%,
+        rgba(255, 190, 90, 0.12) 52%,
+        transparent 100%
+      );
+      animation: crtSweep 5.5s linear infinite;
+      pointer-events: none;
+      z-index: 51;
+    }
+
+    .crt-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        ellipse at center,
+        transparent 62%,
+        rgba(0, 0, 0, 0.65) 100%
+      );
+      pointer-events: none;
+      z-index: 52;
+    }
+
+    @keyframes scanlineScroll {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 4px; }
+    }
+
+    @keyframes crtSweep {
+      0% { top: -100px; }
+      100% { top: 100%; }
+    }
+
+    @keyframes crtFlicker {
+      0%, 96%, 100% { opacity: 1; }
+      97% { opacity: 0.96; }
+      98% { opacity: 0.99; }
+      99% { opacity: 0.95; }
+    }
+
+    /* =========================================================
+       INNER CRT LAYOUT
+       ========================================================= */
+    .crt-inner-frame {
+      position: relative;
+      z-index: 5;
+      margin: 10px;
+      border: 2px solid var(--amber-bright);
+      box-shadow: 0 0 12px rgba(255, 148, 26, 0.25), inset 0 0 12px rgba(255, 148, 26, 0.15);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tva-header {
+      background: rgba(20, 11, 4, 0.88);
+      border-bottom: 2px solid var(--amber-bright);
+      padding: 8px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tva-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      letter-spacing: 1.8px;
+      text-shadow: 0 0 8px var(--amber-glow);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      letter-spacing: 1px;
+    }
+
+    .pulse-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background-color: var(--amber-bright);
+      box-shadow: 0 0 8px var(--amber-bright);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.8); }
+    }
+
+    .audio-toggle-btn {
+      background: rgba(255, 148, 26, 0.12);
+      color: var(--amber-bright);
+      border: 1px solid var(--amber-bright);
+      padding: 3px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .audio-toggle-btn:hover {
+      background: var(--amber-bright);
+      color: #120902;
+    }
+
+    .audio-toggle-btn.muted {
+      border-color: var(--amber-dim);
+      color: var(--amber-dim);
+      background: transparent;
+    }
+
+    .crt-workspace {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 215px 1fr;
+      overflow: hidden;
+    }
+
+    /* Left Retro TVA Sidebar */
+    .tva-sidebar {
+      border-right: 2px solid var(--amber-bright);
+      background: rgba(14, 8, 2, 0.74);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .mascot-box {
+      border: 1px solid var(--amber-border);
+      background: rgba(255, 148, 26, 0.04);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .mascot-stage {
+      width: 124px;
+      height: 124px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 0 6px var(--amber-glow));
+      animation: mascotFloat 3.2s ease-in-out infinite;
+    }
+
+    .mascot-stage svg {
+      width: 120px;
+      height: 120px;
+    }
+
+    @keyframes mascotFloat {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .mascot-caption {
+      margin-top: 6px;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      color: var(--amber-hot);
+    }
+
+    .retro-menu {
+      border: 2px solid var(--amber-bright);
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      background: rgba(12, 7, 3, 0.85);
+    }
+
+    .retro-menu-item {
+      background: transparent;
+      border: none;
+      color: var(--amber-bright);
+      text-align: left;
+      padding: 6px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .retro-menu-item:hover,
+    .retro-menu-item.active {
+      background: var(--amber-bright);
+      color: #120902;
+      box-shadow: 0 0 10px var(--amber-glow);
+    }
+
+    .tva-block-logo {
+      border-top: 1px solid var(--amber-border);
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .tva-coords {
+      font-size: 0.65rem;
+      line-height: 1.35;
+      color: var(--amber-dim);
+    }
+
+    .tva-letters {
+      font-size: 1.45rem;
+      font-weight: 900;
+      letter-spacing: -1px;
+      line-height: 1;
+      color: var(--amber-bright);
+      text-shadow: 0 0 8px var(--amber-glow);
+    }
+
+    /* Right Terminal Column */
+    .terminal-column {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Streamlined Control Deck (API Key + Sliders Only) */
+    .control-deck {
+      background: rgba(18, 10, 3, 0.9);
+      border-bottom: 1px solid var(--amber-border);
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .control-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.68rem;
+      letter-spacing: 0.8px;
+      color: var(--amber-dim);
+      text-transform: uppercase;
+    }
+
+    .slider-val {
+      color: var(--amber-hot);
+      font-weight: 700;
+    }
+
+    .key-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    input[type="password"],
+    textarea {
+      background-color: rgba(10, 6, 2, 0.92);
+      color: var(--amber-bright);
+      border: 1px solid var(--amber-bright);
+      padding: 5px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      outline: none;
+    }
+
+    input:focus, textarea:focus {
+      box-shadow: 0 0 10px var(--amber-glow);
+      background-color: rgba(25, 14, 4, 0.95);
+    }
+
+    .key-row input {
+      flex: 1;
+    }
+
+    /* Retro Amber Range Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: #291604;
+      border: 1px solid var(--amber-border);
+      outline: none;
+      cursor: pointer;
+      margin-top: 3px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 16px;
+      background: var(--amber-bright);
+      border: 1px solid #120902;
+      box-shadow: 0 0 8px var(--amber-glow);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 13px;
+      height: 16px;
+      background: var(--amber-bright);
+      border: 1px solid #120902;
+      box-shadow: 0 0 8px var(--amber-glow);
+      cursor: pointer;
+      border-radius: 0;
+    }
+
+    .btn-action {
+      background-color: rgba(255, 148, 26, 0.12);
+      color: var(--amber-bright);
+      border: 1px solid var(--amber-bright);
+      padding: 5px 10px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.15s ease;
+    }
+
+    .btn-action:hover {
+      background-color: var(--amber-bright);
+      color: #120902;
+      box-shadow: 0 0 12px var(--amber-glow);
+    }
+
+    .btn-prune {
+      border-color: var(--alert-red);
+      color: var(--alert-red);
+      background-color: rgba(255, 59, 31, 0.08);
+    }
+
+    .btn-prune:hover {
+      background-color: var(--alert-red);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 59, 31, 0.55);
+    }
+
+    /* Chat Message Feed */
+    .chat-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    .chat-feed::-webkit-scrollbar {
+      width: 7px;
+    }
+    .chat-feed::-webkit-scrollbar-track {
+      background: rgba(12, 7, 3, 0.6);
+    }
+    .chat-feed::-webkit-scrollbar-thumb {
+      background: var(--amber-bright);
+    }
+
+    .msg {
+      padding: 9px 12px;
+      line-height: 1.5;
+      font-size: 0.87rem;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      text-shadow: 0 0 4px rgba(255, 148, 26, 0.25);
+    }
+
+    .msg-user {
+      background-color: rgba(255, 148, 26, 0.12);
+      border: 1px solid var(--amber-bright);
+      border-left: 4px solid var(--amber-bright);
+      align-self: flex-end;
+      max-width: 84%;
+    }
+
+    .msg-ai {
+      background-color: rgba(14, 8, 2, 0.86);
+      border: 1px solid var(--amber-border);
+      border-left: 4px solid var(--amber-hot);
+      align-self: flex-start;
+      max-width: 90%;
+    }
+
+    .msg-system {
+      background-color: rgba(255, 148, 26, 0.06);
+      border: 1px dashed var(--amber-bright);
+      color: var(--amber-hot);
+      font-size: 0.77rem;
+      text-align: center;
+      align-self: center;
+      width: 100%;
+    }
+
+    .msg-error {
+      background-color: rgba(255, 59, 31, 0.14);
+      border: 1px solid var(--alert-red);
+      color: var(--alert-red);
+      font-size: 0.81rem;
+    }
+
+    .msg-sender {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      margin-bottom: 4px;
+      color: var(--amber-hot);
+    }
+
+    /* Input Area */
+    .input-deck {
+      background: rgba(18, 10, 3, 0.92);
+      border-top: 2px solid var(--amber-bright);
+      padding: 9px 12px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    textarea {
+      flex: 1;
+      resize: none;
+      height: 40px;
+      max-height: 110px;
+      line-height: 1.4;
+    }
+
+    /* Bottom Telemetry Bar inside CRT */
+    .crt-footer-bar {
+      background: rgba(16, 9, 3, 0.95);
+      border-top: 1px solid var(--amber-border);
+      padding: 4px 12px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      color: var(--amber-dim);
+    }
+
+    @media (max-width: 780px) {
+      .tempad-device {
+        grid-template-columns: 1fr;
+      }
+      .tempad-dial-bay {
+        display: none;
+      }
+      .crt-workspace {
+        grid-template-columns: 1fr;
+      }
+      .tva-sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="tempad-device" id="tempadDevice">
+    <!-- Left Metallic Rotary Dial Bay -->
+    <div class="tempad-dial-bay">
+      <div class="dial-notch"></div>
+      <div class="dial-wheel-housing">
+        <div class="dial-arc-outer">
+          <div class="dial-arc-cyan" id="dialCyan"></div>
+        </div>
+      </div>
+      <div class="dial-notch"></div>
+    </div>
+
+    <!-- Right Bezel & CRT Screen -->
+    <div class="tempad-screen-bezel">
+      <div class="crt-screen">
+        <!-- Animated CRT Overlays -->
+        <div class="crt-scanlines"></div>
+        <div class="crt-sweep-beam"></div>
+        <div class="crt-vignette"></div>
+
+        <div class="crt-inner-frame">
+          <!-- Header -->
+          <div class="tva-header">
+            <div class="tva-title">TVA TEMPAD // CHRONOMONITOR</div>
+            <div class="header-right">
+              <button type="button" class="audio-toggle-btn" id="audioToggleBtn" title="Toggle Key Clicks & Background Lofi Radio">
+                LOFI + SFX: ON
+              </button>
+              <div class="status-badge">
+                <span class="pulse-dot" id="statusDot"></span>
+                <span id="statusText">VARIANCE ENERGY: STABLE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Split Workspace -->
+          <div class="crt-workspace">
+            <!-- Left Retro TVA Mascot & Menu -->
+            <aside class="tva-sidebar">
+              <div class="mascot-box">
+                <div class="mascot-stage" id="mascotStage"></div>
+                <div class="mascot-caption" id="mascotCaption">* MISS MINUTES ONLINE</div>
+              </div>
+
+              <!-- Quick Persona Selector Menu -->
+              <div class="retro-menu" id="retroMenu">
+                <button type="button" class="retro-menu-item active" data-persona="miss_minutes">* MISS MINUTES</button>
+                <button type="button" class="retro-menu-item" data-persona="loki">* LOKI LAUFEYSON</button>
+                <button type="button" class="retro-menu-item" data-persona="mobius">* AGENT MOBIUS</button>
+                <button type="button" class="retro-menu-item" id="menuPruneBtn">* PRUNE BRANCH</button>
+              </div>
+
+              <!-- Coordinates & TVA Block Logo -->
+              <div class="tva-block-logo">
+                <div class="tva-coords">
+                  04.12.1985<br />
+                  44.03°N\87.95°W
+                </div>
+                <div class="tva-letters">TVA</div>
+              </div>
+            </aside>
+
+            <!-- Right Terminal Feed & Streamlined Controls -->
+            <div class="terminal-column">
+              <div class="control-deck">
+                <div class="control-group full-width">
+                  <div class="label-row">
+                    <label for="apiKeyInput">TVA Clearance Key (OpenAI API Key)</label>
+                  </div>
+                  <div class="key-row">
+                    <input type="password" id="apiKeyInput" placeholder="sk-proj-..." />
+                    <button id="saveKeyBtn" class="btn-action" type="button">Authorize</button>
+                    <button id="pruneBtn" class="btn-action btn-prune" type="button">Prune</button>
+                  </div>
+                </div>
+
+                <!-- Temperature Slider -->
+                <div class="control-group">
+                  <div class="label-row">
+                    <label for="tempSlider">Variance (Temperature)</label>
+                    <span class="slider-val" id="tempValueLabel">0.70 [BALANCED]</span>
+                  </div>
+                  <input type="range" id="tempSlider" min="0" max="2" step="0.05" value="0.7" />
+                </div>
+
+                <!-- Max Tokens Slider -->
+                <div class="control-group">
+                  <div class="label-row">
+                    <label for="tokensSlider">Output Cap (Max Tokens)</label>
+                    <span class="slider-val" id="tokensValueLabel">1024 TKN</span>
+                  </div>
+                  <input type="range" id="tokensSlider" min="100" max="4096" step="64" value="1024" />
+                </div>
+              </div>
+
+              <!-- Chat Feed -->
+              <div class="chat-feed" id="chatFeed">
+                <div class="msg msg-system">
+                  TEMPAD MK-IV ONLINE // DEFAULT CLEARANCE KEY VERIFIED. TYPE TO ENGAGE LOFI CHRONO-RADIO & TRANSMIT.
+                </div>
+              </div>
+
+              <!-- Input Bar -->
+              <div class="input-deck">
+                <textarea id="userInput" placeholder="Transmit message to the Sacred Timeline..."></textarea>
+                <button id="sendBtn" class="btn-action" type="button">Transmit</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inner CRT Status Footer -->
+          <div class="crt-footer-bar">
+            <span>FOR ALL TIME. ALWAYS.</span>
+            <span id="keyStatusLabel">CLEARANCE: UNVERIFIED</span>
+          </div>
+        </div>
+      </div>
+      <div class="bezel-tva-stamp">TVA</div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================
+    // DEFAULT OPENAI CLEARANCE KEY & MODEL
+    // =========================================================
+    const RAW_DEFAULT_KEY =
+      "ONQDglz1cSvNakzh2jw_6__t_dmIUKKbUr-NWGlm_Mby1T4mBAiJxBjqffQPhONva9gQGq5_T3BlbkFJJFY84SkQBMN8ylDXWRLYj_nWpb-n5WRy1rNXmGDDdvRY0d-zLj566ZFiVfTLecY2UOucixi2AA";
+    const DEFAULT_MODEL = "gpt-6-luna";
+
+    function normalizeOpenAIKey(rawKey) {
+      const cleaned = (rawKey || "").trim();
+      if (!cleaned) return "";
+      if (cleaned.startsWith("sk-")) return cleaned;
+      if (cleaned.includes("T3BlbkFJ")) {
+        return "sk-proj-" + cleaned;
+      }
+      return cleaned;
+    }
+
+    const DEFAULT_API_KEY = normalizeOpenAIKey(RAW_DEFAULT_KEY);
+
+    // =========================================================
+    // RETRO TEMPAD WEB AUDIO ENGINE
+    // - Crisp mechanical typing clicks
+    // - Subtle, warm, low-volume ambient Lofi synth track + vinyl warmth
+    // =========================================================
+    class TemPadLofiAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.lofiTimer = null;
+        this.stepIndex = 0;
+        this.noiseBuffer = null;
+        this.vinylNode = null;
+        this.masterLofiGain = null;
+
+        // Warm 4-bar jazz/lofi progression (Fmaj7 -> Em7 -> Dm7 -> Cmaj7) in Hz
+        this.chords = [
+          [174.61, 220.00, 261.63, 329.63], // Fmaj7
+          [164.81, 196.00, 246.94, 293.66], // Em7
+          [146.83, 174.61, 220.00, 261.63], // Dm7
+          [130.81, 164.81, 196.00, 246.94]  // Cmaj7
+        ];
+
+        // Gentle pentatonic lofi melody notes
+        this.melodyNotes = [
+          523.25, 0, 493.88, 440.00,
+          392.00, 0, 329.63, 392.00,
+          440.00, 0, 392.00, 349.23,
+          329.63, 293.66, 329.63, 0
+        ];
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return;
+          this.ctx = new AudioCtx();
+          this.createNoiseBuffer();
+          this.startVinylCrackle();
+          this.startLofiLoop();
+        }
+        if (this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
+      }
+
+      createNoiseBuffer() {
+        if (!this.ctx) return;
+        const sampleRate = this.ctx.sampleRate;
+        const length = Math.floor(sampleRate * 0.05);
+        const buffer = this.ctx.createBuffer(1, length, sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < length; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (sampleRate * 0.008));
+        }
+        this.noiseBuffer = buffer;
+      }
+
+      playKeyClick(isHeavy = false) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx || this.ctx.state !== "running") return;
+
+        const now = this.ctx.currentTime;
+
+        if (this.noiseBuffer) {
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = this.noiseBuffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = "bandpass";
+          const jitter = (Math.random() - 0.5) * 320;
+          filter.frequency.setValueAtTime((isHeavy ? 1450 : 2150) + jitter, now);
+          filter.Q.setValueAtTime(2.4, now);
+
+          const gain = this.ctx.createGain();
+          const peak = isHeavy ? 0.14 : 0.095;
+          gain.gain.setValueAtTime(peak, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.028);
+
+          noise.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(now);
+        }
+
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(isHeavy ? 190 : 310 + Math.random() * 45, now);
+        osc.frequency.exponentialRampToValueAtTime(65, now + 0.022);
+
+        oscGain.gain.setValueAtTime(isHeavy ? 0.07 : 0.04, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.024);
+
+        osc.connect(oscGain);
+        oscGain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.026);
+      }
+
+      startVinylCrackle() {
+        if (!this.ctx || this.vinylNode) return;
+        const sampleRate = this.ctx.sampleRate;
+        const length = sampleRate * 3;
+        const buffer = this.ctx.createBuffer(1, length, sampleRate);
+        const data = buffer.getChannelData(0);
+
+        // Very subtle tape hiss + occasional tiny dust pops
+        for (let i = 0; i < length; i++) {
+          const hiss = (Math.random() * 2 - 1) * 0.004;
+          const pop = Math.random() < 0.00035 ? (Math.random() * 2 - 1) * 0.09 : 0;
+          data[i] = hiss + pop;
+        }
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(1800, this.ctx.currentTime);
+        filter.Q.setValueAtTime(0.7, this.ctx.currentTime);
+
+        this.masterLofiGain = this.ctx.createGain();
+        this.masterLofiGain.gain.setValueAtTime(this.enabled ? 1 : 0, this.ctx.currentTime);
+
+        const crackleGain = this.ctx.createGain();
+        crackleGain.gain.setValueAtTime(0.22, this.ctx.currentTime);
+
+        source.connect(filter);
+        filter.connect(crackleGain);
+        crackleGain.connect(this.masterLofiGain);
+        this.masterLofiGain.connect(this.ctx.destination);
+        source.start();
+        this.vinylNode = source;
+      }
+
+      playLofiStep() {
+        if (!this.enabled || !this.ctx || this.ctx.state !== "running" || !this.masterLofiGain) return;
+
+        const now = this.ctx.currentTime;
+        const beatInBar = this.stepIndex % 4;
+        const barIndex = Math.floor(this.stepIndex / 4) % this.chords.length;
+
+        // 1. Play warm Rhodes-like electric piano chord at the start of each bar
+        if (beatInBar === 0) {
+          const chord = this.chords[barIndex];
+          chord.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
+            const gain = this.ctx.createGain();
+
+            osc.type = "triangle";
+            // Slight analog tape detune
+            osc.frequency.setValueAtTime(freq + (idx - 1.5) * 0.45, now);
+
+            filter.type = "lowpass";
+            filter.frequency.setValueAtTime(680, now);
+
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.linearRampToValueAtTime(0.016, now + 0.18);
+            gain.gain.exponentialRampToValueAtTime(0.0008, now + 2.9);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.masterLofiGain);
+
+            osc.start(now);
+            osc.stop(now + 3.0);
+          });
+        }
+
+        // 2. Soft muted lofi kick on beats 0 & 2, soft brush snare on beats 1 & 3
+        if (beatInBar === 0 || beatInBar === 2) {
+          const kickOsc = this.ctx.createOscillator();
+          const kickGain = this.ctx.createGain();
+          kickOsc.type = "sine";
+          kickOsc.frequency.setValueAtTime(95, now);
+          kickOsc.frequency.exponentialRampToValueAtTime(38, now + 0.14);
+
+          kickGain.gain.setValueAtTime(0.032, now);
+          kickGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+
+          kickOsc.connect(kickGain);
+          kickGain.connect(this.masterLofiGain);
+          kickOsc.start(now);
+          kickOsc.stop(now + 0.17);
+        } else if (this.noiseBuffer) {
+          const snare = this.ctx.createBufferSource();
+          snare.buffer = this.noiseBuffer;
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = "lowpass";
+          filter.frequency.setValueAtTime(1100, now);
+          const sGain = this.ctx.createGain();
+          sGain.gain.setValueAtTime(0.014, now);
+          sGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.045);
+
+          snare.connect(filter);
+          filter.connect(sGain);
+          sGain.connect(this.masterLofiGain);
+          snare.start(now);
+        }
+
+        // 3. Soft bell-like lofi melody pluck
+        const noteFreq = this.melodyNotes[this.stepIndex % this.melodyNotes.length];
+        if (noteFreq > 0) {
+          const melOsc = this.ctx.createOscillator();
+          const melFilter = this.ctx.createBiquadFilter();
+          const melGain = this.ctx.createGain();
+
+          melOsc.type = "sine";
+          melOsc.frequency.setValueAtTime(noteFreq, now + 0.04);
+
+          melFilter.type = "lowpass";
+          melFilter.frequency.setValueAtTime(900, now);
+
+          melGain.gain.setValueAtTime(0.0001, now + 0.04);
+          melGain.gain.linearRampToValueAtTime(0.014, now + 0.08);
+          melGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+
+          melOsc.connect(melFilter);
+          melFilter.connect(melGain);
+          melGain.connect(this.masterLofiGain);
+
+          melOsc.start(now + 0.04);
+          melOsc.stop(now + 0.68);
+        }
+
+        this.stepIndex++;
+      }
+
+      startLofiLoop() {
+        if (this.lofiTimer) return;
+        // ~78 BPM relaxed lofi tempo (760ms per quarter-note beat)
+        this.playLofiStep();
+        this.lofiTimer = setInterval(() => this.playLofiStep(), 760);
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        if (this.enabled) {
+          this.init();
+          if (this.masterLofiGain && this.ctx) {
+            this.masterLofiGain.gain.setTargetAtTime(1, this.ctx.currentTime, 0.08);
+          }
+          this.playKeyClick(true);
+        } else if (this.masterLofiGain && this.ctx) {
+          this.masterLofiGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+        }
+        return this.enabled;
+      }
+    }
+
+    const audioEngine = new TemPadLofiAudioEngine();
+
+    ["pointerdown", "keydown"].forEach((evt) => {
+      window.addEventListener(
+        evt,
+        () => {
+          audioEngine.init();
+        },
+        { once: true }
+      );
+    });
+
+    // =========================================================
+    // PERSONA DEFINITIONS & PORTRAITS (Controlled via Left Menu)
+    // =========================================================
+    const PERSONAS = {
+      miss_minutes: {
+        name: "MISS MINUTES",
+        caption: "* MISS MINUTES ONLINE",
+        prompt:
+          "You are Miss Minutes, the cheerful, Southern-hospitality animated clock mascot of the Time Variance Authority (TVA) from Marvel's Loki. Address the user warmly (like 'Hey y'all!' or 'sug'), stay helpful and accurate, and sprinkle in light references to the Sacred Timeline, Nexus events, and keeping branches in order.",
+        svg: `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M48 88 L44 106 L34 106" stroke="#ff941a" stroke-width="4" fill="none" stroke-linecap="square"/>
+            <path d="M72 88 L76 106 L86 106" stroke="#ff941a" stroke-width="4" fill="none" stroke-linecap="square"/>
+            <path d="M26 56 L10 42 L14 34 M10 42 L6 38 M10 42 L8 47" stroke="#ff941a" stroke-width="3.5" fill="none" stroke-linecap="square"/>
+            <path d="M94 56 L112 52 L116 52 M110 48 L110 56" stroke="#ff941a" stroke-width="3.5" fill="none" stroke-linecap="square"/>
+            <circle cx="60" cy="56" r="34" fill="#0c0703" stroke="#ff941a" stroke-width="4.5"/>
+            <line x1="60" y1="24" x2="60" y2="33" stroke="#ff941a" stroke-width="3.5"/>
+            <line x1="60" y1="79" x2="60" y2="88" stroke="#ff941a" stroke-width="3.5"/>
+            <line x1="28" y1="56" x2="37" y2="56" stroke="#ff941a" stroke-width="3.5"/>
+            <line x1="83" y1="56" x2="92" y2="56" stroke="#ff941a" stroke-width="3.5"/>
+            <ellipse cx="49" cy="48" rx="4.5" ry="7" fill="#ff941a"/>
+            <ellipse cx="71" cy="48" rx="4.5" ry="7" fill="#ff941a"/>
+            <circle cx="50" cy="46" r="1.8" fill="#0c0703"/>
+            <circle cx="72" cy="46" r="1.8" fill="#0c0703"/>
+            <line x1="44" y1="41" x2="41" y2="38" stroke="#ff941a" stroke-width="2"/>
+            <line x1="76" y1="41" x2="79" y2="38" stroke="#ff941a" stroke-width="2"/>
+            <rect x="58" y="54" width="4" height="4" fill="#ff941a"/>
+            <path d="M46 65 Q60 76 74 65" stroke="#ff941a" stroke-width="3.5" fill="none"/>
+          </svg>
+        `
+      },
+      loki: {
+        name: "LOKI LAUFEYSON",
+        caption: "* GOD OF STORIES",
+        prompt:
+          "You are Loki Laufeyson, the God of Mischief and God of Stories from Marvel's Loki. Speak with theatrical wit, sharp intelligence, and regal confidence. Treat the user's questions as intriguing mortal curiosities while delivering clever, insightful, and genuinely helpful answers.",
+        svg: `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M38 46 C22 36, 18 14, 34 8 C28 20, 32 32, 45 40" fill="#ff941a"/>
+            <path d="M82 46 C98 36, 102 14, 86 8 C92 20, 88 32, 75 40" fill="#ff941a"/>
+            <path d="M36 52 L42 36 L60 42 L78 36 L84 52 L78 56 L60 48 L42 56 Z" fill="#ff941a"/>
+            <path d="M38 52 L38 74 L50 92 L70 92 L82 74 L82 52" fill="#0c0703" stroke="#ff941a" stroke-width="3.5"/>
+            <line x1="43" y1="60" x2="55" y2="63" stroke="#ff941a" stroke-width="3"/>
+            <line x1="77" y1="60" x2="65" y2="63" stroke="#ff941a" stroke-width="3"/>
+            <rect x="46" y="65" width="7" height="4" fill="#ff941a"/>
+            <rect x="67" y="65" width="7" height="4" fill="#ff941a"/>
+            <path d="M49 80 Q62 86 73 76" stroke="#ff941a" stroke-width="3" fill="none"/>
+            <path d="M30 108 L44 96 L60 104 L76 96 L90 108" stroke="#ff941a" stroke-width="3.5" fill="none"/>
+            <circle cx="44" cy="98" r="3" fill="#ff941a"/>
+            <circle cx="76" cy="98" r="3" fill="#ff941a"/>
+          </svg>
+        `
+      },
+      mobius: {
+        name: "MOBIUS M. MOBIUS",
+        caption: "* ANALYST MOBIUS",
+        prompt:
+          "You are Agent Mobius M. Mobius from the Time Variance Authority (TVA). Speak in a calm, laid-back, analytical detective tone. Break down answers clearly, use investigative metaphors, and occasionally make a subtle reference to jet skis or TVA paperwork.",
+        svg: `
+          <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <path d="M34 46 C34 24, 86 24, 86 46 L82 38 L52 38 L38 46 Z" fill="#ff941a"/>
+            <path d="M37 44 L37 70 L50 86 L70 86 L83 70 L83 44" fill="#0c0703" stroke="#ff941a" stroke-width="3.5"/>
+            <line x1="44" y1="53" x2="55" y2="53" stroke="#ff941a" stroke-width="2.5"/>
+            <line x1="65" y1="53" x2="76" y2="53" stroke="#ff941a" stroke-width="2.5"/>
+            <rect x="47" y="57" width="6" height="5" fill="#ff941a"/>
+            <rect x="67" y="57" width="6" height="5" fill="#ff941a"/>
+            <path d="M46 72 Q60 66 74 72 L72 75 Q60 71 48 75 Z" fill="#ff941a"/>
+            <line x1="53" y1="79" x2="67" y2="79" stroke="#ff941a" stroke-width="2.5"/>
+            <path d="M26 110 L38 90 L82 90 L94 110" stroke="#ff941a" stroke-width="3.5" fill="#0c0703"/>
+            <polygon points="60,91 55,107 60,111 65,107" fill="#ff941a"/>
+            <rect x="70" y="97" width="10" height="6" fill="#ff941a"/>
+          </svg>
+        `
+      }
+    };
+
+    let activePersonaKey = "miss_minutes";
+
+    const tempadDevice = document.getElementById("tempadDevice");
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const saveKeyBtn = document.getElementById("saveKeyBtn");
+    const pruneBtn = document.getElementById("pruneBtn");
+    const menuPruneBtn = document.getElementById("menuPruneBtn");
+    const tempSlider = document.getElementById("tempSlider");
+    const tempValueLabel = document.getElementById("tempValueLabel");
+    const tokensSlider = document.getElementById("tokensSlider");
+    const tokensValueLabel = document.getElementById("tokensValueLabel");
+    const chatFeed = document.getElementById("chatFeed");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const statusText = document.getElementById("statusText");
+    const statusDot = document.getElementById("statusDot");
+    const keyStatusLabel = document.getElementById("keyStatusLabel");
+    const mascotStage = document.getElementById("mascotStage");
+    const mascotCaption = document.getElementById("mascotCaption");
+    const audioToggleBtn = document.getElementById("audioToggleBtn");
+    const menuButtons = document.querySelectorAll(".retro-menu-item[data-persona]");
+
+    let conversationHistory = [];
+    const STORAGE_KEY = "tva_openai_api_key";
+
+    // Initialize default mascot SVG
+    mascotStage.innerHTML = PERSONAS[activePersonaKey].svg;
+
+    // Load saved API key OR automatically fall back to default embedded key
+    const storedKey = normalizeOpenAIKey(localStorage.getItem(STORAGE_KEY));
+    const activeInitialKey = storedKey || DEFAULT_API_KEY;
+    if (activeInitialKey) {
+      apiKeyInput.value = activeInitialKey;
+      localStorage.setItem(STORAGE_KEY, activeInitialKey);
+      keyStatusLabel.textContent =
+        "CLEARANCE: GRANTED (" + activeInitialKey.slice(0, 8) + "..." + activeInitialKey.slice(-4) + ")";
+    }
+
+    // Audio Toggle Button
+    audioToggleBtn.addEventListener("click", () => {
+      const isOn = audioEngine.toggle();
+      audioToggleBtn.textContent = isOn ? "LOFI + SFX: ON" : "LOFI + SFX: MUTE";
+      audioToggleBtn.classList.toggle("muted", !isOn);
+    });
+
+    // Tactile typing click sounds inside the terminal input
+    userInput.addEventListener("keydown", (e) => {
+      if (!["Shift", "Control", "Alt", "Meta", "CapsLock", "Tab"].includes(e.key)) {
+        const isHeavy = e.key === "Enter" || e.key === "Backspace" || e.key === " ";
+        audioEngine.playKeyClick(isHeavy);
+      }
+
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Subtle click sound on UI buttons
+    document.querySelectorAll("button:not(#audioToggleBtn)").forEach((el) => {
+      el.addEventListener("click", () => audioEngine.playKeyClick(true));
+    });
+
+    // Live Slider Readouts
+    function updateTempLabel() {
+      const val = parseFloat(tempSlider.value);
+      let mode = "BALANCED";
+      if (val <= 0.35) mode = "DETERMINISTIC";
+      else if (val >= 1.15) mode = "NEXUS CHAOS";
+      tempValueLabel.textContent = `${val.toFixed(2)} [${mode}]`;
+    }
+
+    function updateTokensLabel() {
+      tokensValueLabel.textContent = `${tokensSlider.value} TKN`;
+    }
+
+    tempSlider.addEventListener("input", updateTempLabel);
+    tokensSlider.addEventListener("input", updateTokensLabel);
+    updateTempLabel();
+    updateTokensLabel();
+
+    // Persona Switcher via Left Retro Menu
+    function switchPersona(personaKey) {
+      activePersonaKey = personaKey;
+      const active = PERSONAS[personaKey];
+      mascotStage.innerHTML = active.svg;
+      mascotCaption.textContent = active.caption;
+      menuButtons.forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.persona === personaKey);
+      });
+      appendSystemMessage(`TEMPORAL FREQUENCY SHIFTED TO: ${active.name}`);
+    }
+
+    menuButtons.forEach((btn) => {
+      btn.addEventListener("click", () => switchPersona(btn.dataset.persona));
+    });
+
+    saveKeyBtn.addEventListener("click", () => {
+      const normalized = normalizeOpenAIKey(apiKeyInput.value);
+      if (!normalized.startsWith("sk-")) {
+        appendSystemMessage("WARNING: OpenAI keys typically start with 'sk-'. Double-check your pasted key.", true);
+        return;
+      }
+      apiKeyInput.value = normalized;
+      localStorage.setItem(STORAGE_KEY, normalized);
+      keyStatusLabel.textContent =
+        "CLEARANCE: GRANTED (" + normalized.slice(0, 8) + "..." + normalized.slice(-4) + ")";
+      appendSystemMessage("TVA CLEARANCE KEY STORED LOCALLY IN BROWSER VAULT.");
+    });
+
+    function pruneTimeline() {
+      conversationHistory = [];
+      chatFeed.innerHTML = "";
+      appendSystemMessage("TIMELINE PRUNED // BRANCH MEMORY RESET TO ZERO.");
+    }
+
+    pruneBtn.addEventListener("click", pruneTimeline);
+    menuPruneBtn.addEventListener("click", pruneTimeline);
+
+    function appendMessage(role, senderLabel, text) {
+      const div = document.createElement("div");
+      div.className = `msg ${role === "user" ? "msg-user" : "msg-ai"}`;
+
+      const header = document.createElement("div");
+      header.className = "msg-sender";
+      header.textContent = senderLabel;
+
+      const body = document.createElement("div");
+      body.textContent = text;
+
+      div.appendChild(header);
+      div.appendChild(body);
+      chatFeed.appendChild(div);
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+      return body;
+    }
+
+    function appendSystemMessage(text, isError = false) {
+      const div = document.createElement("div");
+      div.className = isError ? "msg msg-error" : "msg msg-system";
+      div.textContent = text;
+      chatFeed.appendChild(div);
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+
+    function setBusy(isBusy) {
+      sendBtn.disabled = isBusy;
+      userInput.disabled = isBusy;
+      tempadDevice.classList.toggle("busy", isBusy);
+      if (isBusy) {
+        statusText.textContent = "ANALYZING TEMPORAL BRANCH...";
+        statusDot.style.backgroundColor = "#ffd000";
+      } else {
+        statusText.textContent = "VARIANCE ENERGY: STABLE";
+        statusDot.style.backgroundColor = "var(--amber-bright)";
+      }
+    }
+
+    async function callOpenAI(apiKey, payload) {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      return { response, data };
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text) return;
+
+      const apiKey = normalizeOpenAIKey(
+        apiKeyInput.value || localStorage.getItem(STORAGE_KEY) || DEFAULT_API_KEY
+      );
+      if (!apiKey) {
+        appendSystemMessage("ACCESS DENIED: Please paste your OpenAI API key in the TVA Clearance Key box first.", true);
+        return;
+      }
+
+      const activePersona = PERSONAS[activePersonaKey];
+      const temperature = parseFloat(tempSlider.value);
+      const maxTokens = parseInt(tokensSlider.value, 10);
+
+      appendMessage("user", "VARIANT (YOU)", text);
+      conversationHistory.push({ role: "user", content: text });
+      userInput.value = "";
+      setBusy(true);
+
+      const messagesPayload = [
+        { role: "system", content: activePersona.prompt },
+        ...conversationHistory
+      ];
+
+      try {
+        let { response, data } = await callOpenAI(apiKey, {
+          model: DEFAULT_MODEL,
+          messages: messagesPayload,
+          temperature: temperature,
+          max_completion_tokens: maxTokens
+        });
+
+        if (!response.ok && response.status === 400 && data?.error?.param === "temperature") {
+          ({ response, data } = await callOpenAI(apiKey, {
+            model: DEFAULT_MODEL,
+            messages: messagesPayload,
+            max_completion_tokens: maxTokens
+          }));
+        }
+
+        if (!response.ok) {
+          conversationHistory.pop();
+          const errMsg = data?.error?.message || `HTTP ${response.status}`;
+          if (response.status === 401) {
+            appendSystemMessage(`NEXUS ALERT (401 INVALID KEY): ${errMsg}`, true);
+          } else if (response.status === 429) {
+            appendSystemMessage(`TEMPORAL QUOTA EXCEEDED (429): ${errMsg} — Check your OpenAI Billing credits.`, true);
+          } else {
+            appendSystemMessage(`TEMPAD ERROR (${response.status}): ${errMsg}`, true);
+          }
+          setBusy(false);
+          return;
+        }
+
+        const reply = data.choices?.[0]?.message?.content?.trim() || "[EMPTY TRANSMISSION]";
+        conversationHistory.push({ role: "assistant", content: reply });
+        appendMessage("assistant", activePersona.name, reply);
+      } catch (err) {
+        conversationHistory.pop();
+        appendSystemMessage(`CONNECTION SEVERED: ${err.message}`, true);
+      } finally {
+        setBusy(false);
+        userInput.focus();
+      }
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+  </script>
+</body>
+</html>
